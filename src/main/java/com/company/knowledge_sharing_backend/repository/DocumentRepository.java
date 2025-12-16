@@ -69,9 +69,9 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
      */
     @Query("SELECT d FROM Document d WHERE " +
            "d.isArchived = false AND " +
-           "(LOWER(d.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(d.summary) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(d.content) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+           "(LOWER(CAST(d.title AS string)) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(CAST(d.summary AS string)) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(CAST(d.content AS string)) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Document> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
     /**
@@ -80,8 +80,8 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     @Query("SELECT DISTINCT d FROM Document d " +
            "LEFT JOIN d.tags t " +
            "WHERE d.isArchived = false " +
-           "AND (:keyword IS NULL OR LOWER(d.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "    OR LOWER(d.summary) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:keyword IS NULL OR LOWER(CAST(d.title AS string)) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "    OR LOWER(CAST(d.summary AS string)) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
            "AND (:sharingLevel IS NULL OR d.sharingLevel = :sharingLevel) " +
            "AND (:fromDate IS NULL OR d.createdAt >= :fromDate) " +
            "AND (:toDate IS NULL OR d.createdAt <= :toDate) " +

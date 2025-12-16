@@ -37,7 +37,7 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
     /**
      * Search groups by name (case-insensitive)
      */
-    @Query("SELECT g FROM Group g WHERE LOWER(g.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    @Query("SELECT g FROM Group g WHERE LOWER(CAST(g.name AS string)) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Group> searchByName(@Param("keyword") String keyword);
 }
 
