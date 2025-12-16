@@ -70,6 +70,7 @@ public class SecurityConfig {
                 // Public endpoints (no authentication required)
                 .requestMatchers("/api/health/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/files/**").permitAll() // Allow file downloads
                 .requestMatchers("/api/test/**").permitAll() // Remove in production
 
                 // All other endpoints require authentication

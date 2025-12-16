@@ -42,7 +42,7 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
     /**
      * Search tags by name (case-insensitive)
      */
-    @Query("SELECT t FROM Tag t WHERE LOWER(CAST(t.name AS string)) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    @Query("SELECT t FROM Tag t WHERE UPPER(t.name) LIKE UPPER(CONCAT('%', :keyword, '%'))")
     List<Tag> searchByName(@Param("keyword") String keyword);
 
     /**

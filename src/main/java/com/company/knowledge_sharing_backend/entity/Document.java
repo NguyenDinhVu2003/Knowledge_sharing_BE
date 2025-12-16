@@ -115,7 +115,7 @@ public class Document extends BaseEntity {
             return 0.0;
         }
         return ratings.stream()
-                .mapToInt(r -> r.getRatingValue())
+                .mapToInt(Rating::getRatingValue)
                 .average()
                 .orElse(0.0);
     }
