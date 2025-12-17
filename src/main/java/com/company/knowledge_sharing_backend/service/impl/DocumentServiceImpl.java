@@ -12,7 +12,9 @@ import com.company.knowledge_sharing_backend.entity.*;
 import com.company.knowledge_sharing_backend.repository.*;
 import com.company.knowledge_sharing_backend.service.DocumentService;
 import com.company.knowledge_sharing_backend.service.FileStorageService;
+import com.company.knowledge_sharing_backend.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -53,6 +55,10 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Autowired
     private FileStorageService fileStorageService;
+
+    @Autowired
+    @Lazy
+    private NotificationService notificationService;
 
     @Override
     public DocumentResponse createDocument(DocumentRequest request, MultipartFile file, Long userId) {
@@ -100,6 +106,14 @@ public class DocumentServiceImpl implements DocumentService {
 
         // Create initial version
         createVersion(document, owner.getUsername(), "Initial version");
+
+        // Trigger notification for new document
+        try {
+            notificationService.notifyNewDocument(document);
+        } catch (Exception e) {
+            // Log error but don't fail document creation
+            System.err.println("Failed to send notifications: " + e.getMessage());
+        }
 
         return mapToResponse(document);
     }
@@ -159,6 +173,13 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         document = documentRepository.save(document);
+
+        // Trigger notification for document update
+        try {
+            notificationService.notifyDocumentUpdate(document);
+        } catch (Exception e) {
+            System.err.println("Failed to send notifications: " + e.getMessage());
+        }
 
         return mapToResponse(document);
     }

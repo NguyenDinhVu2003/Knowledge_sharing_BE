@@ -12,7 +12,9 @@ import com.company.knowledge_sharing_backend.repository.DocumentRepository;
 import com.company.knowledge_sharing_backend.repository.RatingRepository;
 import com.company.knowledge_sharing_backend.repository.UserRepository;
 import com.company.knowledge_sharing_backend.service.RatingService;
+import com.company.knowledge_sharing_backend.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,10 @@ public class RatingServiceImpl implements RatingService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    @Lazy
+    private NotificationService notificationService;
 
     @Override
     public RatingResponse rateDocument(Long documentId, RatingRequest request, Long userId) {
@@ -55,6 +61,13 @@ public class RatingServiceImpl implements RatingService {
                 .build();
 
         rating = ratingRepository.save(rating);
+
+        // Trigger notification for document owner
+        try {
+            notificationService.notifyDocumentRated(document, request.getRatingValue());
+        } catch (Exception e) {
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
 
         return mapToResponse(rating);
     }
