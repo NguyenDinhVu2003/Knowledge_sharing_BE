@@ -39,17 +39,23 @@ public interface DocumentRepository extends JpaRepository<Document, Long>,
     Page<Document> findBySharingLevelAndIsArchivedFalse(SharingLevel sharingLevel, Pageable pageable);
 
     /**
-     * Find top N recent documents (not archived)
+     * Find top N recent documents (not archived) - Optimized with owner fetch
      */
-    @Query("SELECT d FROM Document d WHERE d.isArchived = false ORDER BY d.createdAt DESC LIMIT :limit")
+    @Query("SELECT DISTINCT d FROM Document d " +
+           "LEFT JOIN FETCH d.owner " +
+           "WHERE d.isArchived = false " +
+           "ORDER BY d.createdAt DESC " +
+           "LIMIT :limit")
     List<Document> findTopRecentDocuments(@Param("limit") int limit);
 
     /**
-     * Find top N popular documents by rating (not archived)
+     * Find top N popular documents by rating (not archived) - Optimized with owner fetch
      */
-    @Query("SELECT d FROM Document d LEFT JOIN d.ratings r " +
+    @Query("SELECT DISTINCT d FROM Document d " +
+           "LEFT JOIN FETCH d.owner " +
+           "LEFT JOIN d.ratings r " +
            "WHERE d.isArchived = false " +
-           "GROUP BY d.id " +
+           "GROUP BY d.id, d.owner " +
            "ORDER BY AVG(r.ratingValue) DESC, COUNT(r.id) DESC " +
            "LIMIT :limit")
     List<Document> findTopPopularDocuments(@Param("limit") int limit);
@@ -126,5 +132,13 @@ public interface DocumentRepository extends JpaRepository<Document, Long>,
      * Count documents by sharing level
      */
     Long countBySharingLevel(SharingLevel sharingLevel);
+
+    /**
+     * Find document by ID with owner (optimized) - tags and groups loaded separately to avoid pagination issues
+     */
+    @Query("SELECT d FROM Document d " +
+           "LEFT JOIN FETCH d.owner " +
+           "WHERE d.id = :id")
+    java.util.Optional<Document> findByIdWithDetails(@Param("id") Long id);
 }
 

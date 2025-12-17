@@ -10,6 +10,7 @@ import com.company.knowledge_sharing_backend.repository.FavoriteRepository;
 import com.company.knowledge_sharing_backend.repository.UserRepository;
 import com.company.knowledge_sharing_backend.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -109,6 +110,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Async("taskExecutor")
     public void notifyNewDocument(Document document) {
         // Get document tags
         Set<Tag> documentTags = document.getTags();
@@ -151,6 +153,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Async("taskExecutor")
     public void notifyDocumentUpdate(Document document) {
         // Find users who favorited this document
         List<Favorite> favorites = favoriteRepository.findByDocumentId(document.getId());
@@ -182,6 +185,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Async("taskExecutor")
     public void notifyDocumentRated(Document document, Integer rating) {
         // Notify document owner
         User owner = document.getOwner();

@@ -8,6 +8,8 @@ import com.company.knowledge_sharing_backend.entity.Tag;
 import com.company.knowledge_sharing_backend.repository.TagRepository;
 import com.company.knowledge_sharing_backend.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ public class TagServiceImpl implements TagService {
     private TagRepository tagRepository;
 
     @Override
+    @CacheEvict(value = {"tags", "popularTags"}, allEntries = true)
     public TagResponse createTag(TagRequest request) {
         // Check if tag already exists
         if (tagRepository.existsByName(request.getName())) {
@@ -38,6 +41,7 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
+    @CacheEvict(value = {"tags", "popularTags"}, allEntries = true)
     public TagResponse updateTag(Long tagId, TagRequest request) {
         Tag tag = tagRepository.findById(tagId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tag not found with id: " + tagId));
@@ -56,6 +60,7 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
+    @CacheEvict(value = {"tags", "popularTags"}, allEntries = true)
     public void deleteTag(Long tagId) {
         Tag tag = tagRepository.findById(tagId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tag not found with id: " + tagId));
@@ -79,6 +84,7 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
+    @Cacheable(value = "tags", key = "'all'")
     @Transactional(readOnly = true)
     public List<TagResponse> getAllTags() {
         List<Tag> tags = tagRepository.findAll();
@@ -89,6 +95,7 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
+    @Cacheable(value = "popularTags", key = "#limit")
     @Transactional(readOnly = true)
     public List<TagResponse> getPopularTags(int limit) {
         List<Tag> tags = tagRepository.findTopPopularTags(limit);

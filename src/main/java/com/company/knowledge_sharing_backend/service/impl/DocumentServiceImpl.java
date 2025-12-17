@@ -14,6 +14,9 @@ import com.company.knowledge_sharing_backend.service.DocumentService;
 import com.company.knowledge_sharing_backend.service.FileStorageService;
 import com.company.knowledge_sharing_backend.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -119,6 +122,11 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
+    @Caching(evict = {
+        @CacheEvict(value = "documents", allEntries = true),
+        @CacheEvict(value = "documentDetails", allEntries = true),
+        @CacheEvict(value = "searchResults", allEntries = true)
+    })
     public DocumentResponse updateDocument(Long documentId, DocumentRequest request, MultipartFile file, Long userId) {
         // Get document
         Document document = documentRepository.findById(documentId)
@@ -199,6 +207,11 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
+    @Caching(evict = {
+        @CacheEvict(value = "documents", allEntries = true),
+        @CacheEvict(value = "documentDetails", allEntries = true),
+        @CacheEvict(value = "searchResults", allEntries = true)
+    })
     public void deleteDocument(Long documentId, Long userId) {
         Document document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
@@ -216,9 +229,11 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
+    @Cacheable(value = "documentDetails", key = "#documentId + '_' + #userId", unless = "#result == null")
     @Transactional(readOnly = true)
     public DocumentDetailResponse getDocumentById(Long documentId, Long userId) {
-        Document document = documentRepository.findById(documentId)
+        // Use optimized query with fetch joins to avoid N+1 queries
+        Document document = documentRepository.findByIdWithDetails(documentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
 
         // Check access permission
@@ -230,6 +245,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
+    @Cacheable(value = "documents", key = "'recent_' + #limit + '_' + #userId")
     @Transactional(readOnly = true)
     public List<DocumentResponse> getRecentDocuments(int limit, Long userId) {
         List<Document> documents = documentRepository.findTopRecentDocuments(limit);
@@ -242,6 +258,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
+    @Cacheable(value = "documents", key = "'popular_' + #limit + '_' + #userId")
     @Transactional(readOnly = true)
     public List<DocumentResponse> getPopularDocuments(int limit, Long userId) {
         List<Document> documents = documentRepository.findTopPopularDocuments(limit);
