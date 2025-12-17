@@ -44,6 +44,11 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
     Long countByDocumentId(Long documentId);
 
     /**
+     * Count ratings by user
+     */
+    Long countByUserId(Long userId);
+
+    /**
      * Delete rating by document and user
      */
     void deleteByDocumentIdAndUserId(Long documentId, Long userId);
