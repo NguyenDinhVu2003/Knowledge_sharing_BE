@@ -4,6 +4,8 @@ import com.company.knowledge_sharing_backend.dto.request.TagRequest;
 import com.company.knowledge_sharing_backend.dto.response.MessageResponse;
 import com.company.knowledge_sharing_backend.dto.response.TagResponse;
 import com.company.knowledge_sharing_backend.service.TagService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,6 +16,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tags")
+@Tag(name = "Tags", description = "Tag management endpoints")
+@SecurityRequirement(name = "bearerAuth")
 public class TagController {
 
     @Autowired

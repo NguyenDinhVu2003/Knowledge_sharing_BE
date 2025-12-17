@@ -5,6 +5,11 @@ import com.company.knowledge_sharing_backend.dto.response.MessageResponse;
 import com.company.knowledge_sharing_backend.dto.response.SystemStatistics;
 import com.company.knowledge_sharing_backend.dto.response.UserManagementResponse;
 import com.company.knowledge_sharing_backend.service.AdminService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +21,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin")
 @PreAuthorize("hasRole('ADMIN')") // Only admins can access these endpoints
+@Tag(name = "Admin", description = "Admin-only endpoints for user management and statistics")
+@SecurityRequirement(name = "bearerAuth")
 public class AdminController {
 
     @Autowired
@@ -25,6 +32,12 @@ public class AdminController {
      * Get all users
      * GET /api/admin/users
      */
+    @Operation(
+        summary = "Get all users",
+        description = "Retrieve all users with their statistics (Admin only)"
+    )
+    @ApiResponse(responseCode = "200", description = "Users retrieved successfully")
+    @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
     @GetMapping("/users")
     public ResponseEntity<List<UserManagementResponse>> getAllUsers() {
         List<UserManagementResponse> users = adminService.getAllUsers();
@@ -45,8 +58,15 @@ public class AdminController {
      * Update user role
      * PUT /api/admin/users/{userId}/role
      */
+    @Operation(
+        summary = "Update user role",
+        description = "Change user role between EMPLOYEE and ADMIN"
+    )
+    @ApiResponse(responseCode = "200", description = "Role updated successfully")
+    @ApiResponse(responseCode = "404", description = "User not found")
     @PutMapping("/users/{userId}/role")
     public ResponseEntity<MessageResponse> updateUserRole(
+            @Parameter(description = "User ID")
             @PathVariable Long userId,
             @Valid @RequestBody UpdateUserRoleRequest request) {
 
@@ -68,6 +88,11 @@ public class AdminController {
      * Get system statistics
      * GET /api/admin/statistics
      */
+    @Operation(
+        summary = "Get system statistics",
+        description = "Get comprehensive system statistics including users, documents, ratings, and top performers"
+    )
+    @ApiResponse(responseCode = "200", description = "Statistics retrieved successfully")
     @GetMapping("/statistics")
     public ResponseEntity<SystemStatistics> getStatistics() {
         SystemStatistics stats = adminService.getSystemStatistics();

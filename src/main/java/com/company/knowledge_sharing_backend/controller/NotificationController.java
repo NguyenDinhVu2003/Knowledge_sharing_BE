@@ -5,6 +5,8 @@ import com.company.knowledge_sharing_backend.dto.response.NotificationResponse;
 import com.company.knowledge_sharing_backend.entity.User;
 import com.company.knowledge_sharing_backend.service.AuthService;
 import com.company.knowledge_sharing_backend.service.NotificationService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/notifications")
+@Tag(name = "Notifications", description = "User notification management")
+@SecurityRequirement(name = "bearerAuth")
 public class NotificationController {
 
     @Autowired

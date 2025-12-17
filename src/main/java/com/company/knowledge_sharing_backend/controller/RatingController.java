@@ -7,6 +7,8 @@ import com.company.knowledge_sharing_backend.dto.response.RatingResponse;
 import com.company.knowledge_sharing_backend.entity.User;
 import com.company.knowledge_sharing_backend.service.AuthService;
 import com.company.knowledge_sharing_backend.service.RatingService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/ratings")
+@Tag(name = "Ratings", description = "Document rating endpoints")
+@SecurityRequirement(name = "bearerAuth")
 public class RatingController {
 
     @Autowired

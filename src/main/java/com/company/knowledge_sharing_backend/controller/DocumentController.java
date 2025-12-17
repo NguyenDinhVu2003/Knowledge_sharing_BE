@@ -11,6 +11,14 @@ import com.company.knowledge_sharing_backend.entity.User;
 import com.company.knowledge_sharing_backend.service.AuthService;
 import com.company.knowledge_sharing_backend.service.DocumentService;
 import com.company.knowledge_sharing_backend.service.SearchService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +29,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/documents")
+@Tag(name = "Documents", description = "Document management endpoints")
+@SecurityRequirement(name = "bearerAuth")
 public class DocumentController {
 
     @Autowired
@@ -36,9 +46,23 @@ public class DocumentController {
      * Create new document
      * POST /api/documents
      */
+    @Operation(
+        summary = "Upload new document",
+        description = "Upload a new document with metadata and file"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Document uploaded successfully",
+                content = @Content(schema = @Schema(implementation = DocumentResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid file or request",
+                content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized",
+                content = @Content)
+    })
     @PostMapping
     public ResponseEntity<DocumentResponse> createDocument(
+            @Parameter(description = "Document metadata")
             @RequestPart("data") @Valid DocumentRequest request,
+            @Parameter(description = "Document file (PDF, DOC, or Image)")
             @RequestPart("file") MultipartFile file) {
 
         User currentUser = authService.getCurrentUser();
@@ -51,10 +75,22 @@ public class DocumentController {
      * Update document
      * PUT /api/documents/{id}
      */
+    @Operation(
+        summary = "Update document",
+        description = "Update document metadata and optionally upload new file version"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Document updated successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "403", description = "Not document owner"),
+        @ApiResponse(responseCode = "404", description = "Document not found")
+    })
     @PutMapping("/{id}")
     public ResponseEntity<DocumentResponse> updateDocument(
+            @Parameter(description = "Document ID")
             @PathVariable Long id,
             @RequestPart("data") @Valid DocumentRequest request,
+            @Parameter(description = "New file version (optional)")
             @RequestPart(value = "file", required = false) MultipartFile file) {
 
         User currentUser = authService.getCurrentUser();
@@ -67,8 +103,20 @@ public class DocumentController {
      * Get document by ID
      * GET /api/documents/{id}
      */
+    @Operation(
+        summary = "Get document by ID",
+        description = "Retrieve document details including metadata and file information"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Document retrieved successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "403", description = "Access denied"),
+        @ApiResponse(responseCode = "404", description = "Document not found")
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<DocumentDetailResponse> getDocument(@PathVariable Long id) {
+    public ResponseEntity<DocumentDetailResponse> getDocument(
+            @Parameter(description = "Document ID")
+            @PathVariable Long id) {
         User currentUser = authService.getCurrentUser();
         DocumentDetailResponse response = documentService.getDocumentById(id, currentUser.getId());
 
@@ -158,8 +206,14 @@ public class DocumentController {
      * Advanced search with full features
      * POST /api/documents/search/advanced
      */
+    @Operation(
+        summary = "Advanced search",
+        description = "Search documents with multiple filters and get faceted results"
+    )
+    @ApiResponse(responseCode = "200", description = "Search completed successfully")
     @PostMapping("/search/advanced")
     public ResponseEntity<SearchResultResponse> advancedSearch(
+            @Parameter(description = "Search criteria with filters")
             @RequestBody DocumentSearchRequest request) {
 
         User currentUser = authService.getCurrentUser();

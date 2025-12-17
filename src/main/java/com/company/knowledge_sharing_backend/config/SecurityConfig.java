@@ -71,7 +71,18 @@ public class SecurityConfig {
                 .requestMatchers("/api/health/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/files/**").permitAll() // Allow file downloads
-                .requestMatchers("/api/test/**").permitAll() // Remove in production
+
+                // Swagger/OpenAPI endpoints
+                .requestMatchers("/swagger-ui.html").permitAll()
+                .requestMatchers("/swagger-ui/**").permitAll()
+                .requestMatchers("/v3/api-docs/**").permitAll()
+                .requestMatchers("/v3/api-docs.yaml").permitAll()
+                .requestMatchers("/swagger-resources/**").permitAll()
+                .requestMatchers("/webjars/**").permitAll()
+                .requestMatchers("/configuration/**").permitAll()
+
+                // Test endpoints (remove in production)
+                .requestMatchers("/api/test/**").permitAll()
 
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
