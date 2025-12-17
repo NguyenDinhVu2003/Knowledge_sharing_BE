@@ -6,6 +6,7 @@ import com.company.knowledge_sharing_backend.entity.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -14,7 +15,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface DocumentRepository extends JpaRepository<Document, Long> {
+public interface DocumentRepository extends JpaRepository<Document, Long>,
+                                           JpaSpecificationExecutor<Document> {
 
     /**
      * Find documents by owner ID

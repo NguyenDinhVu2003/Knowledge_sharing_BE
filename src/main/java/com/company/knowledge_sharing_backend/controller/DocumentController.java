@@ -6,9 +6,11 @@ import com.company.knowledge_sharing_backend.dto.response.DocumentDetailResponse
 import com.company.knowledge_sharing_backend.dto.response.DocumentResponse;
 import com.company.knowledge_sharing_backend.dto.response.DocumentVersionResponse;
 import com.company.knowledge_sharing_backend.dto.response.MessageResponse;
+import com.company.knowledge_sharing_backend.dto.response.SearchResultResponse;
 import com.company.knowledge_sharing_backend.entity.User;
 import com.company.knowledge_sharing_backend.service.AuthService;
 import com.company.knowledge_sharing_backend.service.DocumentService;
+import com.company.knowledge_sharing_backend.service.SearchService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +28,9 @@ public class DocumentController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private SearchService searchService;
 
     /**
      * Create new document
@@ -147,6 +152,44 @@ public class DocumentController {
         List<DocumentResponse> documents = documentService.searchDocuments(request, currentUser.getId());
 
         return ResponseEntity.ok(documents);
+    }
+
+    /**
+     * Advanced search with full features
+     * POST /api/documents/search/advanced
+     */
+    @PostMapping("/search/advanced")
+    public ResponseEntity<SearchResultResponse> advancedSearch(
+            @RequestBody DocumentSearchRequest request) {
+
+        User currentUser = authService.getCurrentUser();
+        SearchResultResponse response = searchService.searchWithFacets(request, currentUser.getId());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Search suggestions (autocomplete)
+     * GET /api/documents/search/suggestions?q=keyword
+     */
+    @GetMapping("/search/suggestions")
+    public ResponseEntity<List<String>> searchSuggestions(
+            @RequestParam(value = "q", required = false) String query) {
+
+        // Return top 10 document titles matching the query
+        User currentUser = authService.getCurrentUser();
+
+        DocumentSearchRequest request = new DocumentSearchRequest();
+        request.setQuery(query);
+        request.setPage(0);
+        request.setSize(10);
+
+        List<DocumentResponse> documents = documentService.searchDocuments(request, currentUser.getId());
+        List<String> suggestions = documents.stream()
+                .map(DocumentResponse::getTitle)
+                .toList();
+
+        return ResponseEntity.ok(suggestions);
     }
 
     /**
