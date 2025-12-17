@@ -98,14 +98,20 @@ public class DocumentSpecification {
                 predicates.add(groupJoin.get("id").in(request.getGroupIds()));
             }
 
-            // Filter by rating range
-            if (request.getMinRating() != null) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(
-                    root.get("averageRating"), request.getMinRating()));
-            }
-            if (request.getMaxRating() != null) {
-                predicates.add(criteriaBuilder.lessThanOrEqualTo(
-                    root.get("averageRating"), request.getMaxRating()));
+            // Filter by rating range (using subquery to calculate average)
+            if (request.getMinRating() != null || request.getMaxRating() != null) {
+                Subquery<Double> ratingSubquery = query.subquery(Double.class);
+                Root<Rating> ratingRoot = ratingSubquery.from(Rating.class);
+
+                ratingSubquery.select(criteriaBuilder.avg(ratingRoot.get("ratingValue")))
+                    .where(criteriaBuilder.equal(ratingRoot.get("document").get("id"), root.get("id")));
+
+                if (request.getMinRating() != null) {
+                    predicates.add(criteriaBuilder.greaterThanOrEqualTo(ratingSubquery, request.getMinRating()));
+                }
+                if (request.getMaxRating() != null) {
+                    predicates.add(criteriaBuilder.lessThanOrEqualTo(ratingSubquery, request.getMaxRating()));
+                }
             }
 
             // Filter by date range

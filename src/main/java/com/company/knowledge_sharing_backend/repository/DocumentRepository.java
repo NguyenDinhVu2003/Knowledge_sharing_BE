@@ -67,19 +67,13 @@ public interface DocumentRepository extends JpaRepository<Document, Long>,
     Page<Document> findByTagsIn(@Param("tags") List<Tag> tags, Pageable pageable);
 
     /**
-     * Search documents by title or content (case-insensitive using database function)
+     * Search documents by title or content (case-insensitive)
      */
-    @Query(value = "SELECT * FROM documents d WHERE " +
-           "d.is_archived = false AND " +
-           "(LOWER(d.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(d.summary) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(d.content) LIKE LOWER(CONCAT('%', :keyword, '%')))",
-           countQuery = "SELECT COUNT(*) FROM documents d WHERE " +
-           "d.is_archived = false AND " +
-           "(LOWER(d.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(d.summary) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(d.content) LIKE LOWER(CONCAT('%', :keyword, '%')))",
-           nativeQuery = true)
+    @Query("SELECT d FROM Document d WHERE " +
+           "d.isArchived = false AND " +
+           "(d.title LIKE CONCAT('%', :keyword, '%') OR " +
+           "d.summary LIKE CONCAT('%', :keyword, '%') OR " +
+           "d.content LIKE CONCAT('%', :keyword, '%'))")
     Page<Document> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
     /**

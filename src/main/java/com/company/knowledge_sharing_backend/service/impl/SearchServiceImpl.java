@@ -49,6 +49,20 @@ public class SearchServiceImpl implements SearchService {
                 .map(this::mapToDocumentResponse)
                 .collect(Collectors.toList());
 
+        // Post-process sorting for rating-based sorts (since averageRating is transient)
+        String sortBy = request.getSortBy() != null ? request.getSortBy().toLowerCase() : "recent";
+        if ("rating".equals(sortBy) || "popular".equals(sortBy)) {
+            boolean ascending = request.getSortOrder() != null &&
+                              request.getSortOrder().equalsIgnoreCase("asc");
+            documents = documents.stream()
+                    .sorted((d1, d2) -> {
+                        Double rating1 = d1.getAverageRating() != null ? d1.getAverageRating() : 0.0;
+                        Double rating2 = d2.getAverageRating() != null ? d2.getAverageRating() : 0.0;
+                        return ascending ? rating1.compareTo(rating2) : rating2.compareTo(rating1);
+                    })
+                    .collect(Collectors.toList());
+        }
+
         long searchTime = System.currentTimeMillis() - startTime;
 
         return SearchResultResponse.builder()
@@ -79,6 +93,20 @@ public class SearchServiceImpl implements SearchService {
         List<DocumentResponse> documents = page.getContent().stream()
                 .map(this::mapToDocumentResponse)
                 .collect(Collectors.toList());
+
+        // Post-process sorting for rating-based sorts
+        String sortBy = request.getSortBy() != null ? request.getSortBy().toLowerCase() : "recent";
+        if ("rating".equals(sortBy) || "popular".equals(sortBy)) {
+            boolean ascending = request.getSortOrder() != null &&
+                              request.getSortOrder().equalsIgnoreCase("asc");
+            documents = documents.stream()
+                    .sorted((d1, d2) -> {
+                        Double rating1 = d1.getAverageRating() != null ? d1.getAverageRating() : 0.0;
+                        Double rating2 = d2.getAverageRating() != null ? d2.getAverageRating() : 0.0;
+                        return ascending ? rating1.compareTo(rating2) : rating2.compareTo(rating1);
+                    })
+                    .collect(Collectors.toList());
+        }
 
         // Calculate facets (from all matching documents without pagination)
         List<Document> allMatches = documentRepository.findAll(spec);
@@ -129,14 +157,11 @@ public class SearchServiceImpl implements SearchService {
                 property = "title";
                 break;
             case "rating":
-                direction = sortOrder != null && sortOrder.equalsIgnoreCase("asc")
-                    ? Sort.Direction.ASC : Sort.Direction.DESC;
-                property = "averageRating";
-                break;
             case "popular":
-                // Sort by average rating as proxy for popularity
+                // Cannot sort by transient field in database
+                // Will sort in memory after fetching results
                 direction = Sort.Direction.DESC;
-                property = "averageRating";
+                property = "createdAt";
                 break;
             case "relevance":
                 // For relevance, we'd typically use full-text search scores
