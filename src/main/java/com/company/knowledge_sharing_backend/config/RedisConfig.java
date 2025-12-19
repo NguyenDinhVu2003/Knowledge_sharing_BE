@@ -33,10 +33,17 @@ public class RedisConfig {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
-        // Configure Jackson ObjectMapper for JSON serialization
+        // Configure Jackson ObjectMapper for JSON serialization with type information
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        // Enable default typing to include class type information in JSON
+        // This prevents ClassCastException when deserializing from cache
+        objectMapper.activateDefaultTyping(
+            objectMapper.getPolymorphicTypeValidator(),
+            ObjectMapper.DefaultTyping.NON_FINAL
+        );
 
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
@@ -54,10 +61,17 @@ public class RedisConfig {
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        // Configure ObjectMapper
+        // Configure ObjectMapper with type information
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        // Enable default typing to include class type information in JSON
+        // This prevents ClassCastException when deserializing from cache
+        objectMapper.activateDefaultTyping(
+            objectMapper.getPolymorphicTypeValidator(),
+            ObjectMapper.DefaultTyping.NON_FINAL
+        );
 
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
@@ -68,22 +82,17 @@ public class RedisConfig {
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))
                 .disableCachingNullValues();
 
-        // Custom configurations for specific caches
-        RedisCacheConfiguration documentsConfig = defaultConfig.entryTtl(Duration.ofMinutes(30));
+        // Custom configurations for specific caches (only cache stable data)
         RedisCacheConfiguration tagsConfig = defaultConfig.entryTtl(Duration.ofHours(2));
         RedisCacheConfiguration statisticsConfig = defaultConfig.entryTtl(Duration.ofMinutes(10));
-        RedisCacheConfiguration searchConfig = defaultConfig.entryTtl(Duration.ofMinutes(15));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
-                .withCacheConfiguration("documents", documentsConfig)
-                .withCacheConfiguration("documentDetails", documentsConfig)
+                // Only cache stable data that doesn't change frequently
                 .withCacheConfiguration("tags", tagsConfig)
                 .withCacheConfiguration("popularTags", tagsConfig)
                 .withCacheConfiguration("statistics", statisticsConfig)
-                .withCacheConfiguration("searchResults", searchConfig)
-                .withCacheConfiguration("userRatings", defaultConfig)
-                .withCacheConfiguration("userFavorites", defaultConfig)
+                // Removed: documents, documentDetails, searchResults (cause ClassCastException and change frequently)
                 .build();
     }
 }
