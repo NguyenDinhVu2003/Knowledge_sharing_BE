@@ -166,12 +166,13 @@ public class DocumentServiceImpl implements DocumentService {
             document.setFilePath(newFileName);
             document.setFileType(newFileType);
             document.setFileSize(file.getSize());
-            document.setVersionNumber(document.getVersionNumber() + 1);
 
-            // Create new version
-            User user = userRepository.findById(userId).orElseThrow();
-            createVersion(document, user.getUsername(), request.getChangeNotes());
         }
+        document.setVersionNumber(document.getVersionNumber() + 1);
+
+        // Create new version
+        User user = userRepository.findById(userId).orElseThrow();
+        createVersion(document, user.getUsername(), request.getChangeNotes());
 
         document = documentRepository.save(document);
 
