@@ -6,11 +6,9 @@ import com.company.knowledge_sharing_backend.dto.response.DocumentDetailResponse
 import com.company.knowledge_sharing_backend.dto.response.DocumentResponse;
 import com.company.knowledge_sharing_backend.dto.response.DocumentVersionResponse;
 import com.company.knowledge_sharing_backend.dto.response.MessageResponse;
-import com.company.knowledge_sharing_backend.dto.response.SearchResultResponse;
 import com.company.knowledge_sharing_backend.entity.User;
 import com.company.knowledge_sharing_backend.service.AuthService;
 import com.company.knowledge_sharing_backend.service.DocumentService;
-import com.company.knowledge_sharing_backend.service.SearchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -38,9 +36,6 @@ public class DocumentController {
 
     @Autowired
     private AuthService authService;
-
-    @Autowired
-    private SearchService searchService;
 
     /**
      * Create new document
@@ -174,53 +169,6 @@ public class DocumentController {
         return ResponseEntity.ok(documents);
     }
 
-    /**
-     * Search documents
-     * GET /api/documents/search?query=...&tags=...
-     */
-    @GetMapping("/search")
-    public ResponseEntity<List<DocumentResponse>> searchDocuments(
-            @RequestParam(required = false) String query,
-            @RequestParam(required = false) List<String> tags,
-            @RequestParam(required = false) String sharingLevel,
-            @RequestParam(required = false, defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "10") Integer size,
-            @RequestParam(required = false) String sortBy) {
-
-        User currentUser = authService.getCurrentUser();
-
-        DocumentSearchRequest request = new DocumentSearchRequest();
-        request.setQuery(query);
-        request.setTags(tags);
-        request.setSharingLevel(sharingLevel);
-        request.setPage(page);
-        request.setSize(size);
-        request.setSortBy(sortBy);
-
-        List<DocumentResponse> documents = documentService.searchDocuments(request, currentUser.getId());
-
-        return ResponseEntity.ok(documents);
-    }
-
-    /**
-     * Advanced search with full features
-     * POST /api/documents/search/advanced
-     */
-    @Operation(
-        summary = "Advanced search",
-        description = "Search documents with multiple filters and get faceted results"
-    )
-    @ApiResponse(responseCode = "200", description = "Search completed successfully")
-    @PostMapping("/search/advanced")
-    public ResponseEntity<SearchResultResponse> advancedSearch(
-            @Parameter(description = "Search criteria with filters")
-            @RequestBody DocumentSearchRequest request) {
-
-        User currentUser = authService.getCurrentUser();
-        SearchResultResponse response = searchService.searchWithFacets(request, currentUser.getId());
-
-        return ResponseEntity.ok(response);
-    }
 
     /**
      * Search suggestions (autocomplete)

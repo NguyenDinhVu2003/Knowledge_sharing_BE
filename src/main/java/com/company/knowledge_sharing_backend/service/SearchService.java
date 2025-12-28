@@ -6,7 +6,5 @@ import com.company.knowledge_sharing_backend.dto.response.SearchResultResponse;
 public interface SearchService {
 
     SearchResultResponse advancedSearch(DocumentSearchRequest request, Long currentUserId);
-
-    SearchResultResponse searchWithFacets(DocumentSearchRequest request, Long currentUserId);
 }
 

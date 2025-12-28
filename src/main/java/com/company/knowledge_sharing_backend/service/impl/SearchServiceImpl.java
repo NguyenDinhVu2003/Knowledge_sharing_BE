@@ -19,9 +19,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -76,61 +74,6 @@ public class SearchServiceImpl implements SearchService {
                 .build();
     }
 
-    @Override
-    public SearchResultResponse searchWithFacets(DocumentSearchRequest request, Long currentUserId) {
-        long startTime = System.currentTimeMillis();
-
-        // Build specification
-        Specification<Document> spec = DocumentSpecification.buildSpecification(request, currentUserId);
-
-        // Build pageable with sorting
-        Pageable pageable = buildPageable(request);
-
-        // Execute search
-        Page<Document> page = documentRepository.findAll(spec, pageable);
-
-        // Convert to response
-        List<DocumentResponse> documents = page.getContent().stream()
-                .map(this::mapToDocumentResponse)
-                .collect(Collectors.toList());
-
-        // Post-process sorting for rating-based sorts
-        String sortBy = request.getSortBy() != null ? request.getSortBy().toLowerCase() : "recent";
-        if ("rating".equals(sortBy) || "popular".equals(sortBy)) {
-            boolean ascending = request.getSortOrder() != null &&
-                              request.getSortOrder().equalsIgnoreCase("asc");
-            documents = documents.stream()
-                    .sorted((d1, d2) -> {
-                        Double rating1 = d1.getAverageRating() != null ? d1.getAverageRating() : 0.0;
-                        Double rating2 = d2.getAverageRating() != null ? d2.getAverageRating() : 0.0;
-                        return ascending ? rating1.compareTo(rating2) : rating2.compareTo(rating1);
-                    })
-                    .collect(Collectors.toList());
-        }
-
-        // Calculate facets (from all matching documents without pagination)
-        List<Document> allMatches = documentRepository.findAll(spec);
-        Map<String, Long> tagFacets = calculateTagFacets(allMatches);
-        Map<String, Long> fileTypeFacets = calculateFileTypeFacets(allMatches);
-        Map<String, Long> sharingLevelFacets = calculateSharingLevelFacets(allMatches);
-        Map<String, Long> ownerFacets = calculateOwnerFacets(allMatches);
-
-        long searchTime = System.currentTimeMillis() - startTime;
-
-        return SearchResultResponse.builder()
-                .documents(documents)
-                .currentPage(page.getNumber())
-                .totalPages(page.getTotalPages())
-                .totalElements(page.getTotalElements())
-                .pageSize(page.getSize())
-                .tagFacets(tagFacets)
-                .fileTypeFacets(fileTypeFacets)
-                .sharingLevelFacets(sharingLevelFacets)
-                .ownerFacets(ownerFacets)
-                .query(request.getQuery())
-                .searchTimeMs(searchTime)
-                .build();
-    }
 
     // ==================== HELPER METHODS ====================
 
@@ -179,55 +122,6 @@ public class SearchServiceImpl implements SearchService {
         return Sort.by(direction, property);
     }
 
-    private Map<String, Long> calculateTagFacets(List<Document> documents) {
-        return documents.stream()
-                .flatMap(doc -> doc.getTags().stream())
-                .collect(Collectors.groupingBy(
-                        Tag::getName,
-                        Collectors.counting()
-                ))
-                .entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (v1, v2) -> v1,
-                        LinkedHashMap::new
-                ));
-    }
-
-    private Map<String, Long> calculateFileTypeFacets(List<Document> documents) {
-        return documents.stream()
-                .collect(Collectors.groupingBy(
-                        doc -> doc.getFileType().name(),
-                        Collectors.counting()
-                ));
-    }
-
-    private Map<String, Long> calculateSharingLevelFacets(List<Document> documents) {
-        return documents.stream()
-                .collect(Collectors.groupingBy(
-                        doc -> doc.getSharingLevel().name(),
-                        Collectors.counting()
-                ));
-    }
-
-    private Map<String, Long> calculateOwnerFacets(List<Document> documents) {
-        return documents.stream()
-                .collect(Collectors.groupingBy(
-                        doc -> doc.getOwner().getUsername(),
-                        Collectors.counting()
-                ))
-                .entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .limit(20) // Top 20 contributors
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (v1, v2) -> v1,
-                        LinkedHashMap::new
-                ));
-    }
 
     private DocumentResponse mapToDocumentResponse(Document document) {
         return DocumentResponse.builder()
