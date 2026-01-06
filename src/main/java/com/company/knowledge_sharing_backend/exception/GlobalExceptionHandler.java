@@ -55,6 +55,46 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(InvalidFileTypeException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidFileTypeException(InvalidFileTypeException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "INVALID_FILE_TYPE");
+        error.put("message", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(FileTooLargeException.class)
+    public ResponseEntity<Map<String, String>> handleFileTooLargeException(FileTooLargeException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "FILE_TOO_LARGE");
+        error.put("message", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(TextExtractionException.class)
+    public ResponseEntity<Map<String, String>> handleTextExtractionException(TextExtractionException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "TEXT_EXTRACTION_FAILED");
+        error.put("message", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(GPTApiException.class)
+    public ResponseEntity<Map<String, String>> handleGPTApiException(GPTApiException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "GPT_API_ERROR");
+        error.put("message", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Map<String, String>> handleRateLimitExceededException(RateLimitExceededException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "RATE_LIMIT_EXCEEDED");
+        error.put("message", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
         ErrorResponse error = new ErrorResponse(
