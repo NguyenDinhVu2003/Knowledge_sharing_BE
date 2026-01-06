@@ -70,7 +70,10 @@ public class SecurityConfig {
                 // Public endpoints (no authentication required)
                 .requestMatchers("/api/health/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/files/**").permitAll() // Allow file downloads
+                .requestMatchers("/api/files/**").permitAll() // Allow file downloads via API
+
+                // Static files (direct access to uploads)
+                .requestMatchers("/*.jpg", "/*.jpeg", "/*.png", "/*.gif", "/*.pdf", "/*.docx", "/*.doc").permitAll()
 
                 // Swagger/OpenAPI endpoints
                 .requestMatchers("/swagger-ui.html").permitAll()
