@@ -13,6 +13,7 @@ import com.company.knowledge_sharing_backend.repository.*;
 import com.company.knowledge_sharing_backend.service.DocumentService;
 import com.company.knowledge_sharing_backend.service.FileStorageService;
 import com.company.knowledge_sharing_backend.service.NotificationService;
+import com.company.knowledge_sharing_backend.service.SemanticSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
@@ -59,6 +60,10 @@ public class DocumentServiceImpl implements DocumentService {
     @Autowired
     @Lazy
     private NotificationService notificationService;
+
+    @Autowired
+    @Lazy
+    private SemanticSearchService semanticSearchService;
 
     @Override
     public DocumentResponse createDocument(DocumentRequest request, MultipartFile file, Long userId) {
@@ -113,6 +118,15 @@ public class DocumentServiceImpl implements DocumentService {
         } catch (Exception e) {
             // Log error but don't fail document creation
             System.err.println("Failed to send notifications: " + e.getMessage());
+        }
+
+        // Generate embedding asynchronously (don't block document creation)
+        final Long documentId = document.getId();
+        try {
+            semanticSearchService.generateDocumentEmbedding(documentId);
+        } catch (Exception e) {
+            // Log error but don't fail document creation
+            System.err.println("Failed to generate embedding for document " + documentId + ": " + e.getMessage());
         }
 
         return mapToResponse(document);

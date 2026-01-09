@@ -73,5 +73,9 @@ public class DocumentResponse {
 
     @Schema(description = "Associated group IDs", example = "[1, 2]")
     private List<Long> groupIds;
+
+    // AI Semantic Search
+    @Schema(description = "Semantic similarity score (0.0-1.0, only for semantic search)", example = "0.85")
+    private Double semanticScore;
 }
 

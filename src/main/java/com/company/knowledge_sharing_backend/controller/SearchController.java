@@ -1,10 +1,17 @@
 package com.company.knowledge_sharing_backend.controller;
 
 import com.company.knowledge_sharing_backend.dto.request.DocumentSearchRequest;
+import com.company.knowledge_sharing_backend.dto.response.DocumentResponse;
 import com.company.knowledge_sharing_backend.dto.response.SearchResultResponse;
 import com.company.knowledge_sharing_backend.entity.User;
 import com.company.knowledge_sharing_backend.service.AuthService;
 import com.company.knowledge_sharing_backend.service.SearchService;
+import com.company.knowledge_sharing_backend.service.SemanticSearchService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +22,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/search")
+@Tag(name = "Search", description = "Document search endpoints including AI semantic search")
 public class SearchController {
 
     @Autowired
     private SearchService searchService;
+
+    @Autowired
+    private SemanticSearchService semanticSearchService;
 
     @Autowired
     private AuthService authService;
@@ -125,6 +136,73 @@ public class SearchController {
 
         SearchResultResponse response = searchService.advancedSearch(request, currentUser.getId());
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * AI SEMANTIC SEARCH - Search documents using AI semantic understanding
+     * GET /api/search/semantic
+     *
+     * ========================================================================
+     * WHAT IS SEMANTIC SEARCH?
+     * ========================================================================
+     * Unlike keyword search which only matches exact words, semantic search
+     * understands the MEANING of your query and finds documents with similar
+     * concepts, even if they don't contain the exact keywords.
+     *
+     * Example:
+     *   Query: "machine learning best practices"
+     *   Will find documents about:
+     *   - AI model training
+     *   - Neural network optimization
+     *   - Deep learning techniques
+     *   Even if they don't contain the exact phrase "machine learning"
+     *
+     * ========================================================================
+     * HOW IT WORKS:
+     * ========================================================================
+     * 1. Your query is converted to an embedding vector using Gemini AI
+     * 2. Each document has a pre-computed embedding vector
+     * 3. We calculate cosine similarity between query and all documents
+     * 4. Return documents ranked by similarity score (0.0-1.0)
+     *
+     * ========================================================================
+     * WHEN TO USE:
+     * ========================================================================
+     * ✅ Exploratory search - "What documents are related to X?"
+     * ✅ Conceptual search - "Find documents about Y concept"
+     * ✅ When you don't know exact keywords
+     * ✅ Cross-language understanding
+     *
+     * @param query Search query (natural language)
+     * @param limit Maximum number of results (default: 10, max: 50)
+     * @return List of documents ranked by semantic similarity with scores
+     */
+    @Operation(
+        summary = "AI Semantic Search",
+        description = "Search documents using AI semantic understanding. Returns documents ranked by meaning similarity, not just keyword matching."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Search completed successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid query"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "500", description = "AI service error")
+    })
+    @GetMapping("/semantic")
+    public ResponseEntity<List<DocumentResponse>> semanticSearch(
+            @Parameter(description = "Search query (natural language)", example = "machine learning best practices")
+            @RequestParam("q") String query,
+            @Parameter(description = "Maximum number of results (max: 50)", example = "10")
+            @RequestParam(value = "limit", defaultValue = "10") Integer limit) {
+
+        User currentUser = authService.getCurrentUser();
+
+        // Validate limit
+        if (limit < 1 || limit > 50) {
+            limit = 10;
+        }
+
+        List<DocumentResponse> results = semanticSearchService.semanticSearch(query, currentUser.getId(), limit);
+        return ResponseEntity.ok(results);
     }
 }
 

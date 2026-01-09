@@ -66,6 +66,11 @@ public class Document extends BaseEntity {
     @Builder.Default
     private Boolean isArchived = false;
 
+    // AI Semantic Search - Store embedding as JSON string
+    @Lob
+    @Column(name = "content_embedding", columnDefinition = "TEXT")
+    private String contentEmbedding;
+
     // Relationships
 
     @ManyToOne(fetch = FetchType.LAZY)
