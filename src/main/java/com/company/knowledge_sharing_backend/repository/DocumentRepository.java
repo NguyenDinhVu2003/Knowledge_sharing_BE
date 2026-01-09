@@ -140,5 +140,19 @@ public interface DocumentRepository extends JpaRepository<Document, Long>,
            "LEFT JOIN FETCH d.owner " +
            "WHERE d.id = :id")
     java.util.Optional<Document> findByIdWithDetails(@Param("id") Long id);
+
+    /**
+     * Find related documents based on common tags
+     * Excludes the current document and returns documents with most matching tags
+     */
+    @Query("SELECT DISTINCT d FROM Document d " +
+           "LEFT JOIN FETCH d.owner " +
+           "JOIN d.tags t " +
+           "WHERE d.id != :documentId " +
+           "AND d.isArchived = false " +
+           "AND t IN :tags " +
+           "GROUP BY d.id, d.owner " +
+           "ORDER BY COUNT(t.id) DESC, d.createdAt DESC")
+    List<Document> findRelatedByTags(@Param("documentId") Long documentId, @Param("tags") List<Tag> tags, Pageable pageable);
 }
 

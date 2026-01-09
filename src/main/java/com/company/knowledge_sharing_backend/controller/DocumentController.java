@@ -205,5 +205,32 @@ public class DocumentController {
 
         return ResponseEntity.ok(versions);
     }
+
+    /**
+     * Get related documents based on tags
+     * GET /api/documents/{id}/related
+     */
+    @Operation(
+        summary = "Get related documents",
+        description = "Get documents with similar tags (maximum 5 documents)"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Related documents retrieved successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "403", description = "Access denied"),
+        @ApiResponse(responseCode = "404", description = "Document not found")
+    })
+    @GetMapping("/{id}/related")
+    public ResponseEntity<List<DocumentResponse>> getRelatedDocuments(
+            @Parameter(description = "Document ID")
+            @PathVariable Long id,
+            @Parameter(description = "Maximum number of related documents to return (default: 5)")
+            @RequestParam(defaultValue = "5") int limit) {
+
+        User currentUser = authService.getCurrentUser();
+        List<DocumentResponse> relatedDocuments = documentService.getRelatedDocuments(id, currentUser.getId(), limit);
+
+        return ResponseEntity.ok(relatedDocuments);
+    }
 }
 

@@ -30,5 +30,7 @@ public interface DocumentService {
     List<DocumentResponse> searchDocuments(DocumentSearchRequest request, Long userId);
 
     List<DocumentVersionResponse> getDocumentVersions(Long documentId, Long userId);
+
+    List<DocumentResponse> getRelatedDocuments(Long documentId, Long userId, int limit);
 }
 

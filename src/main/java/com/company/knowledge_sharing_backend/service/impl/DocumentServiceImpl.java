@@ -329,6 +329,42 @@ public class DocumentServiceImpl implements DocumentService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<DocumentResponse> getRelatedDocuments(Long documentId, Long userId, int limit) {
+        // Get the source document
+        Document sourceDocument = documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
+
+        // Check access permission
+        if (!canAccessDocument(sourceDocument, userId)) {
+            throw new UnauthorizedException("You don't have permission to access this document");
+        }
+
+        // Get tags from source document
+        Set<Tag> sourceTags = sourceDocument.getTags();
+
+        // If document has no tags, return empty list
+        if (sourceTags == null || sourceTags.isEmpty()) {
+            return List.of();
+        }
+
+        // Find related documents based on common tags
+        Pageable pageable = PageRequest.of(0, limit);
+        List<Document> relatedDocuments = documentRepository.findRelatedByTags(
+                documentId,
+                List.copyOf(sourceTags),
+                pageable
+        );
+
+        // Filter by access permission and map to response
+        return relatedDocuments.stream()
+                .filter(doc -> canAccessDocument(doc, userId))
+                .map(this::mapToResponse)
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
     // ==================== HELPER METHODS ====================
 
     private Set<Tag> handleTags(List<String> tagNames) {
