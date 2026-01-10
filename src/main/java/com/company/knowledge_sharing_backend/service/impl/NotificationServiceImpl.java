@@ -10,6 +10,7 @@ import com.company.knowledge_sharing_backend.repository.FavoriteRepository;
 import com.company.knowledge_sharing_backend.repository.UserRepository;
 import com.company.knowledge_sharing_backend.repository.DocumentRepository;
 import com.company.knowledge_sharing_backend.service.NotificationService;
+import com.company.knowledge_sharing_backend.service.WebSocketNotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -40,6 +41,9 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Autowired
     private DocumentRepository documentRepository;
+
+    @Autowired
+    private WebSocketNotificationService webSocketNotificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -154,7 +158,15 @@ public class NotificationServiceImpl implements NotificationService {
                     .isRead(false)
                     .build();
 
-            notificationRepository.save(notification);
+            Notification saved = notificationRepository.save(notification);
+
+            // Send real-time notification via WebSocket
+            NotificationResponse response = mapToResponse(saved);
+            webSocketNotificationService.sendNotificationToUser(user.getId(), response);
+
+            // Send updated unread count
+            Integer unreadCount = getUnreadCount(user.getId());
+            webSocketNotificationService.sendUnreadCountToUser(user.getId(), unreadCount);
         }
     }
 
@@ -186,7 +198,15 @@ public class NotificationServiceImpl implements NotificationService {
                     .isRead(false)
                     .build();
 
-            notificationRepository.save(notification);
+            Notification saved = notificationRepository.save(notification);
+
+            // Send real-time notification via WebSocket
+            NotificationResponse response = mapToResponse(saved);
+            webSocketNotificationService.sendNotificationToUser(user.getId(), response);
+
+            // Send updated unread count
+            Integer unreadCount = getUnreadCount(user.getId());
+            webSocketNotificationService.sendUnreadCountToUser(user.getId(), unreadCount);
         }
     }
 
@@ -209,7 +229,15 @@ public class NotificationServiceImpl implements NotificationService {
                 .isRead(false)
                 .build();
 
-        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+
+        // Send real-time notification via WebSocket
+        NotificationResponse response = mapToResponse(saved);
+        webSocketNotificationService.sendNotificationToUser(owner.getId(), response);
+
+        // Send updated unread count
+        Integer unreadCount = getUnreadCount(owner.getId());
+        webSocketNotificationService.sendUnreadCountToUser(owner.getId(), unreadCount);
     }
 
     @Override
@@ -255,6 +283,14 @@ public class NotificationServiceImpl implements NotificationService {
             Notification saved = notificationRepository.save(notification);
             log.info("Comment notification created successfully: id={}, userId={}, message={}",
                     saved.getId(), owner.getId(), message);
+
+            // Send real-time notification via WebSocket
+            NotificationResponse response = mapToResponse(saved);
+            webSocketNotificationService.sendNotificationToUser(owner.getId(), response);
+
+            // Send updated unread count
+            Integer unreadCount = getUnreadCount(owner.getId());
+            webSocketNotificationService.sendUnreadCountToUser(owner.getId(), unreadCount);
         } else {
             log.info("Skipping notification - user commenting on own document");
         }
@@ -309,6 +345,14 @@ public class NotificationServiceImpl implements NotificationService {
         Notification saved = notificationRepository.save(notification);
         log.info("Reply notification created successfully: id={}, userId={}, message={}",
                 saved.getId(), parentCommentAuthor.getId(), message);
+
+        // Send real-time notification via WebSocket
+        NotificationResponse response = mapToResponse(saved);
+        webSocketNotificationService.sendNotificationToUser(parentCommentAuthor.getId(), response);
+
+        // Send updated unread count
+        Integer unreadCount = getUnreadCount(parentCommentAuthor.getId());
+        webSocketNotificationService.sendUnreadCountToUser(parentCommentAuthor.getId(), unreadCount);
     }
 
     // ==================== HELPER METHODS ====================

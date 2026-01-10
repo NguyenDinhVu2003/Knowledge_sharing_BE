@@ -72,6 +72,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/files/**").permitAll() // Allow file downloads via API
 
+                // WebSocket endpoints
+                .requestMatchers("/ws/**").permitAll()
+                .requestMatchers("/api/ws/**").permitAll()
+
                 // Static files (direct access to uploads)
                 .requestMatchers("/*.jpg", "/*.jpeg", "/*.png", "/*.gif", "/*.pdf", "/*.docx", "/*.doc").permitAll()
 
