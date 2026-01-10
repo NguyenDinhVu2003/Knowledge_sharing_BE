@@ -30,5 +30,9 @@ public interface NotificationService {
     void notifyDocumentUpdate(Document document);
 
     void notifyDocumentRated(Document document, Integer rating);
+
+    void notifyNewComment(Long documentId, Long commentAuthorId, String commentContent);
+
+    void notifyCommentReply(Long parentCommentAuthorId, Long replyAuthorId, String replyContent, Long documentId);
 }
 

@@ -8,7 +8,9 @@ import com.company.knowledge_sharing_backend.repository.NotificationRepository;
 import com.company.knowledge_sharing_backend.repository.UserInterestRepository;
 import com.company.knowledge_sharing_backend.repository.FavoriteRepository;
 import com.company.knowledge_sharing_backend.repository.UserRepository;
+import com.company.knowledge_sharing_backend.repository.DocumentRepository;
 import com.company.knowledge_sharing_backend.service.NotificationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@Slf4j
 public class NotificationServiceImpl implements NotificationService {
 
     @Autowired
@@ -34,6 +37,9 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private DocumentRepository documentRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -204,6 +210,105 @@ public class NotificationServiceImpl implements NotificationService {
                 .build();
 
         notificationRepository.save(notification);
+    }
+
+    @Override
+    @Async("taskExecutor")
+    public void notifyNewComment(Long documentId, Long commentAuthorId, String commentContent) {
+        log.info("notifyNewComment called: documentId={}, commentAuthorId={}", documentId, commentAuthorId);
+
+        // Get document
+        Document document = documentRepository.findById(documentId).orElse(null);
+
+        if (document == null) {
+            log.warn("Document not found with id: {}", documentId);
+            return;
+        }
+
+        // Notify document owner (if not the commenter)
+        User owner = document.getOwner();
+        if (!owner.getId().equals(commentAuthorId)) {
+            User commentAuthor = userRepository.findById(commentAuthorId).orElse(null);
+            if (commentAuthor == null) {
+                log.warn("Comment author not found with id: {}", commentAuthorId);
+                return;
+            }
+
+            String preview = commentContent.length() > 50
+                    ? commentContent.substring(0, 50) + "..."
+                    : commentContent;
+
+            String message = String.format(
+                    "%s commented on your document \"%s\": %s",
+                    commentAuthor.getUsername(),
+                    document.getTitle(),
+                    preview
+            );
+
+            Notification notification = Notification.builder()
+                    .user(owner)
+                    .document(document)
+                    .message(message)
+                    .isRead(false)
+                    .build();
+
+            Notification saved = notificationRepository.save(notification);
+            log.info("Comment notification created successfully: id={}, userId={}, message={}",
+                    saved.getId(), owner.getId(), message);
+        } else {
+            log.info("Skipping notification - user commenting on own document");
+        }
+    }
+
+    @Override
+    @Async("taskExecutor")
+    public void notifyCommentReply(Long parentCommentAuthorId, Long replyAuthorId, String replyContent, Long documentId) {
+        log.info("notifyCommentReply called: parentCommentAuthorId={}, replyAuthorId={}, documentId={}",
+                parentCommentAuthorId, replyAuthorId, documentId);
+
+        // Don't notify if replying to own comment
+        if (parentCommentAuthorId.equals(replyAuthorId)) {
+            log.info("Skipping notification - user replying to own comment");
+            return;
+        }
+
+        User parentCommentAuthor = userRepository.findById(parentCommentAuthorId).orElse(null);
+        User replyAuthor = userRepository.findById(replyAuthorId).orElse(null);
+
+        if (parentCommentAuthor == null) {
+            log.warn("Parent comment author not found with id: {}", parentCommentAuthorId);
+            return;
+        }
+
+        if (replyAuthor == null) {
+            log.warn("Reply author not found with id: {}", replyAuthorId);
+            return;
+        }
+
+        // Get document for reference
+        Document document = documentRepository.findById(documentId).orElse(null);
+
+        String preview = replyContent.length() > 50
+                ? replyContent.substring(0, 50) + "..."
+                : replyContent;
+
+        String message = String.format(
+                "%s replied to your comment%s: %s",
+                replyAuthor.getUsername(),
+                document != null ? " on \"" + document.getTitle() + "\"" : "",
+                preview
+        );
+
+        Notification notification = Notification.builder()
+                .user(parentCommentAuthor)
+                .document(document)
+                .message(message)
+                .isRead(false)
+                .build();
+
+        Notification saved = notificationRepository.save(notification);
+        log.info("Reply notification created successfully: id={}, userId={}, message={}",
+                saved.getId(), parentCommentAuthor.getId(), message);
     }
 
     // ==================== HELPER METHODS ====================
