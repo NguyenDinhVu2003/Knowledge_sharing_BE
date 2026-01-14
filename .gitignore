@@ -32,6 +32,3 @@ build/
 ### VS Code ###
 .vscode/
 
-# Application properties (sensitive data)
-src/main/resources/application.properties
-src/main/resources/application-*.properties
