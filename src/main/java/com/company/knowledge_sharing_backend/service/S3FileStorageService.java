@@ -67,8 +67,8 @@ public class S3FileStorageService {
                     metadata
             );
 
-            // Make object publicly readable (optional, depends on your bucket policy)
-            putObjectRequest.setCannedAcl(CannedAccessControlList.PublicRead);
+            // Note: Bucket has ACLs disabled - using presigned URLs for access
+            // No need to set public ACL
 
             amazonS3Client.putObject(putObjectRequest);
 
