@@ -36,12 +36,20 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Register STOMP endpoint at /ws
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("http://localhost:4200", "http://localhost:*")
+                .setAllowedOriginPatterns(
+                        "http://localhost:4200",
+                        "http://localhost:*",
+                        "https://knowledgesharingfe-production.up.railway.app"
+                )
                 .withSockJS();
 
         // Register additional endpoint at /api/ws for frontend convenience
         registry.addEndpoint("/api/ws")
-                .setAllowedOriginPatterns("http://localhost:4200", "http://localhost:*")
+                .setAllowedOriginPatterns(
+                        "http://localhost:4200",
+                        "http://localhost:*",
+                        "https://knowledgesharingfe-production.up.railway.app"
+                )
                 .withSockJS();
     }
 }
