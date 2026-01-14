@@ -31,6 +31,10 @@ public class DocumentResponse {
     @Schema(description = "File path on server", example = "abc123.pdf")
     private String filePath;
 
+    @Schema(description = "Presigned URL to access file from S3 (valid for 1 hour)",
+            example = "https://s3.amazonaws.com/bucket/file.pdf?signature=...")
+    private String fileUrl;
+
     @Schema(description = "File type", example = "PDF", allowableValues = {"PDF", "DOC", "IMAGE"})
     private String fileType;
 

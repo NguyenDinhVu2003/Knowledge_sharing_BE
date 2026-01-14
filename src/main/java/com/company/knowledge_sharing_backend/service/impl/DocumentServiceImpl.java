@@ -11,7 +11,7 @@ import com.company.knowledge_sharing_backend.exception.UnauthorizedException;
 import com.company.knowledge_sharing_backend.entity.*;
 import com.company.knowledge_sharing_backend.repository.*;
 import com.company.knowledge_sharing_backend.service.DocumentService;
-import com.company.knowledge_sharing_backend.service.FileStorageService;
+import com.company.knowledge_sharing_backend.service.S3FileStorageService;
 import com.company.knowledge_sharing_backend.service.NotificationService;
 import com.company.knowledge_sharing_backend.service.SemanticSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,7 +55,7 @@ public class DocumentServiceImpl implements DocumentService {
     private FavoriteRepository favoriteRepository;
 
     @Autowired
-    private FileStorageService fileStorageService;
+    private S3FileStorageService s3FileStorageService;
 
     @Autowired
     @Lazy
@@ -76,16 +76,16 @@ public class DocumentServiceImpl implements DocumentService {
         User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        // Store file
-        String fileName = fileStorageService.storeFile(file);
-        FileType fileType = fileStorageService.determineFileType(file.getOriginalFilename());
+        // Store file in S3
+        String s3Key = s3FileStorageService.storeFile(file);
+        FileType fileType = s3FileStorageService.determineFileType(file.getOriginalFilename());
 
         // Create document
         Document document = Document.builder()
                 .title(request.getTitle())
                 .summary(request.getSummary())
                 .content(request.getContent())
-                .filePath(fileName)
+                .filePath(s3Key)
                 .fileType(fileType)
                 .fileSize(file.getSize())
                 .sharingLevel(SharingLevel.valueOf(request.getSharingLevel()))
@@ -171,13 +171,13 @@ public class DocumentServiceImpl implements DocumentService {
 
         // Handle file update (creates new version)
         if (file != null && !file.isEmpty()) {
-            String newFileName = fileStorageService.storeFile(file);
-            FileType newFileType = fileStorageService.determineFileType(file.getOriginalFilename());
+            String newS3Key = s3FileStorageService.storeFile(file);
+            FileType newFileType = s3FileStorageService.determineFileType(file.getOriginalFilename());
 
-            // Delete old file (optional - might want to keep for versions)
-            // fileStorageService.deleteFile(document.getFilePath());
+            // Delete old file from S3 (optional - might want to keep for versions)
+            // s3FileStorageService.deleteFile(document.getFilePath());
 
-            document.setFilePath(newFileName);
+            document.setFilePath(newS3Key);
             document.setFileType(newFileType);
             document.setFileSize(file.getSize());
 
@@ -225,8 +225,8 @@ public class DocumentServiceImpl implements DocumentService {
             throw new UnauthorizedException("You don't have permission to delete this document");
         }
 
-        // Delete file
-        fileStorageService.deleteFile(document.getFilePath());
+        // Delete file from S3
+        s3FileStorageService.deleteFile(document.getFilePath());
 
         // Delete document (cascade will delete versions, ratings, favorites, etc.)
         documentRepository.delete(document);
@@ -467,12 +467,24 @@ public class DocumentServiceImpl implements DocumentService {
     // ==================== MAPPING METHODS ====================
 
     private DocumentResponse mapToResponse(Document document) {
+        // Generate presigned URL for file access
+        String fileUrl = null;
+        try {
+            if (document.getFilePath() != null && !document.getFilePath().isEmpty()) {
+                fileUrl = s3FileStorageService.generatePresignedUrl(document.getFilePath());
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the whole response
+            System.err.println("Failed to generate presigned URL for document " + document.getId() + ": " + e.getMessage());
+        }
+
         return DocumentResponse.builder()
                 .id(document.getId())
                 .title(document.getTitle())
                 .summary(document.getSummary())
                 .content(document.getContent())
                 .filePath(document.getFilePath())
+                .fileUrl(fileUrl)
                 .fileType(document.getFileType().name())
                 .fileSize(document.getFileSize())
                 .sharingLevel(document.getSharingLevel().name())
@@ -501,12 +513,23 @@ public class DocumentServiceImpl implements DocumentService {
         // Get versions
         List<DocumentVersion> versions = versionRepository.findByDocumentIdOrderByVersionNumberDesc(document.getId());
 
+        // Generate presigned URL for file access
+        String fileUrl = null;
+        try {
+            if (document.getFilePath() != null && !document.getFilePath().isEmpty()) {
+                fileUrl = s3FileStorageService.generatePresignedUrl(document.getFilePath());
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to generate presigned URL for document " + document.getId() + ": " + e.getMessage());
+        }
+
         return DocumentDetailResponse.builder()
                 .id(document.getId())
                 .title(document.getTitle())
                 .summary(document.getSummary())
                 .content(document.getContent())
                 .filePath(document.getFilePath())
+                .fileUrl(fileUrl)
                 .fileType(document.getFileType().name())
                 .fileSize(document.getFileSize())
                 .sharingLevel(document.getSharingLevel().name())

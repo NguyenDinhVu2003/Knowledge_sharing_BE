@@ -139,6 +139,13 @@
 			<artifactId>okhttp</artifactId>
 			<version>4.11.0</version>
 		</dependency>
+
+		<!-- AWS SDK for S3 File Storage -->
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-s3</artifactId>
+			<version>1.12.529</version>
+		</dependency>
 	</dependencies>
 
 	<build>

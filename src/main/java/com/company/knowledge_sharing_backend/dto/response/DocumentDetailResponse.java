@@ -18,6 +18,7 @@ public class DocumentDetailResponse {
     private String summary;
     private String content;
     private String filePath;
+    private String fileUrl; // Presigned URL for S3 access
     private String fileType;
     private Long fileSize;
     private String sharingLevel;

@@ -1,60 +1,68 @@
 package com.company.knowledge_sharing_backend.controller;
 
-import com.company.knowledge_sharing_backend.service.FileStorageService;
+import com.company.knowledge_sharing_backend.service.S3FileStorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/files")
-@Tag(name = "Files", description = "File download endpoints (public access)")
+@Tag(name = "Files", description = "File access endpoints (public access)")
 public class FileController {
 
     @Autowired
-    private FileStorageService fileStorageService;
+    private S3FileStorageService s3FileStorageService;
 
     /**
-     * Download file
-     * GET /api/files/{fileName}
+     * Get presigned URL for file download/view
+     * GET /api/files/{s3Key}
      */
     @Operation(
-        summary = "Download file",
-        description = "Download document file by filename (public access)"
+        summary = "Get file URL",
+        description = "Get presigned URL to access file from S3 (valid for 1 hour)"
     )
-    @GetMapping("/{fileName:.+}")
-    public ResponseEntity<Resource> downloadFile(
-            @Parameter(description = "File name to download")
-            @PathVariable String fileName,
-            HttpServletRequest request) {
-        // Load file as Resource
-        Resource resource = fileStorageService.loadFileAsResource(fileName);
+    @GetMapping("/{s3Key:.+}")
+    public ResponseEntity<Map<String, String>> getFileUrl(
+            @Parameter(description = "S3 key of the file")
+            @PathVariable String s3Key) {
 
-        // Try to determine file's content type
-        String contentType = null;
-        try {
-            contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
-        } catch (IOException ex) {
-            // Ignore
+        // Generate presigned URL (valid for 1 hour)
+        String presignedUrl = s3FileStorageService.generatePresignedUrl(s3Key);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("url", presignedUrl);
+        response.put("expiresIn", "3600"); // seconds (1 hour)
+        response.put("s3Key", s3Key);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Check if file exists
+     * HEAD /api/files/{s3Key}
+     */
+    @Operation(
+        summary = "Check file existence",
+        description = "Check if file exists in S3"
+    )
+    @RequestMapping(value = "/{s3Key:.+}", method = RequestMethod.HEAD)
+    public ResponseEntity<Void> checkFileExists(
+            @Parameter(description = "S3 key of the file")
+            @PathVariable String s3Key) {
+
+        boolean exists = s3FileStorageService.fileExists(s3Key);
+
+        if (exists) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
         }
-
-        // Fallback to default content type
-        if (contentType == null) {
-            contentType = "application/octet-stream";
-        }
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
-                .body(resource);
     }
 }
 

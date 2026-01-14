@@ -1,0 +1,45 @@
+# ================================================
+# AWS S3 Configuration (Migration from Local Storage)
+# ================================================
+
+# AWS S3 Credentials
+# IMPORTANT: DO NOT commit real credentials to Git!
+# Use environment variables in production
+
+# Access Key ID
+# Can be overridden by environment variable: AWS_S3_ACCESS_KEY
+aws.s3.access-key=${AWS_S3_ACCESS_KEY:YOUR_ACCESS_KEY_HERE}
+
+# Secret Access Key
+# Can be overridden by environment variable: AWS_S3_SECRET_KEY
+aws.s3.secret-key=${AWS_S3_SECRET_KEY:YOUR_SECRET_KEY_HERE}
+
+# AWS Region (e.g., ap-southeast-1, us-east-1, eu-west-1)
+# Can be overridden by environment variable: AWS_S3_REGION
+aws.s3.region=${AWS_S3_REGION:ap-southeast-1}
+
+# S3 Bucket Name
+# Can be overridden by environment variable: AWS_S3_BUCKET_NAME
+aws.s3.bucket-name=${AWS_S3_BUCKET_NAME:your-bucket-name}
+
+# Presigned URL expiration time in minutes (default: 60 = 1 hour)
+aws.s3.presigned-url-expiration-minutes=60
+
+# ================================================
+# OLD Local File Storage Configuration
+# ================================================
+# Keep this for backward compatibility if needed
+# file.upload-dir=./uploads
+
+# ================================================
+# Railway Environment Variables Setup
+# ================================================
+# Add these variables in Railway dashboard:
+#
+# AWS_S3_ACCESS_KEY=your_access_key_here
+# AWS_S3_SECRET_KEY=your_secret_key_here
+# AWS_S3_REGION=ap-southeast-1
+# AWS_S3_BUCKET_NAME=your-bucket-name
+#
+# ================================================
+
