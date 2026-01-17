@@ -44,7 +44,7 @@ public class RedisConfig {
             config.setPassword(redisPassword);
         }
 
-        System.out.println("🔴 Redis Config - Host: " + redisHost + ", Port: " + redisPort + ", Has Password: " + (redisPassword != null && !redisPassword.isEmpty()));
+        System.out.println("Redis Config - Host: " + redisHost + ", Port: " + redisPort + ", Has Password: " + (redisPassword != null && !redisPassword.isEmpty()));
 
         return new LettuceConnectionFactory(config);
     }
