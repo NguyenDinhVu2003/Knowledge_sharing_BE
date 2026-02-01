@@ -46,8 +46,9 @@ public interface UserInterestRepository extends JpaRepository<UserInterest, Long
 
     /**
      * Find users interested in specific tags (for notifications)
+     * Use DISTINCT to avoid duplicate user IDs when user has multiple matching interests
      */
-    @Query("SELECT ui.user.id FROM UserInterest ui WHERE ui.tag IN :tags")
+    @Query("SELECT DISTINCT ui.user.id FROM UserInterest ui WHERE ui.tag IN :tags")
     List<Long> findUserIdsByTags(@Param("tags") List<Tag> tags);
 
     /**
