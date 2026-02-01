@@ -434,11 +434,23 @@ public class DocumentServiceImpl implements DocumentService {
 
         // Group documents - check if user is in any of the groups
         if (document.getSharingLevel() == SharingLevel.GROUP) {
-            User user = userRepository.findById(userId).orElse(null);
-            if (user != null) {
-                return document.getGroups().stream()
-                        .anyMatch(group -> group.getUsers().contains(user));
+            // Get document's group IDs
+            Set<Long> documentGroupIds = document.getGroups().stream()
+                    .map(Group::getId)
+                    .collect(Collectors.toSet());
+
+            if (documentGroupIds.isEmpty()) {
+                return false; // No groups assigned, user cannot access
             }
+
+            // Query fresh data from database: get user's current groups
+            List<Group> userGroups = groupRepository.findByUserId(userId);
+            Set<Long> userGroupIds = userGroups.stream()
+                    .map(Group::getId)
+                    .collect(Collectors.toSet());
+
+            // Check if user belongs to any of the document's groups
+            return documentGroupIds.stream().anyMatch(userGroupIds::contains);
         }
 
         // Private documents - only owner
